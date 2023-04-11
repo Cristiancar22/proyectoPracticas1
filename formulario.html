@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<!-- CSS para la datatable-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/material-components-web/4.0.0/material-components-web.min.css"></script>
+<script src="https://cdn.datatables.net/1.13.4/css/dataTables.material.min.css"></script>
+
+<!-- Jquery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap 4 -->
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+<!-- SweetAlert CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css" />
+
+<!-- SweetAlert JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- dataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.css" />
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+
+
+<html>
+    <head>
+        <style>
+            h1 {
+                text-align: center;
+            }
+            body {
+                margin: 2em;
+            }
+        </style><br>
+        <h1>Pagina de Incidencias</h1>
+    </head>
+    <body>
+        <button type="button" class="btn btn-primary" id="nueva-incidencia" data-toggle="modal" data-target="#modalForm" >Nueva incidencia</button><br><br>
+        <table id="tabla" class="cell-border stripe table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Titulo</th>
+                    <th>Descripcion</th>
+                    <th>Prioridad</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dato in datos %}
+                <tr class="fila" data-id={{dato.id}}>
+                    <td class="id">{{dato.id}}</td>
+                    <td class="titulo">{{dato.titulo}}</td>
+                    <td class="descripcion">{{dato.descripcion}}</td>
+                    <td class="prioridad">{{dato.prioridad}}</td>
+                    <td></td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </body>
+<!-- Modal -->
+<div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-labelledby="modalFormLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalFormLabel">Incidencia</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="formulario" >
+                    <form id="form">
+                        {% csrf_token %}
+                        <input type="hidden" id="id" name="id" >
+            
+                        <b><label for="titulo">Titulo:</label></b><br>
+                        <input type="text" id="titulo" name="titulo"><br><br>
+            
+                        <b><label for="descripcion">Descripcion:</label></b><br>
+                        <textarea name="descripcion" id="descripcion" rows="10" cols="50"></textarea><br><br>
+            
+                    <b><label for="Prioridad">Prioridad</label></b><br>
+                        <select id="Prioridad" name="Prioridad">
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                        </select><br><br>
+                        <input id= "env" class="btn-enviar" type="submit" value="Enviar">
+                    </form>
+                    <button id="edit" style="display: none" >Actualizar</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
+
+<!-- Data Table -->
+<script>
+        var tabla = $('#tabla').DataTable({
+        'order': [[0, 'asc']],
+        "columnDefs": [
+            {"visible": false, "targets":0},
+            {
+                "targets": -1,
+                "data": null,
+                "defaultContent":
+                '<button class="btn-eliminar">Eliminar </button>        <button class="btn-editar" >Editar </button>'
+            },
+        ],
+        'createdRow': function(row, data, dataIndex) {
+            $(row).attr('class', 'fila')
+            $(row).attr('data-id', data[0])
+            var hijos = $(row).children()
+            $(hijos[0]).attr('class', 'titulo')
+            $(hijos[1]).attr('class', 'descripcion')
+            $(hijos[2]).attr('class', 'prioridad')
+        },
+
+})
+</script>
+
+<!-- Boton nueva incidencia-->
+<script>
+    $('#nueva-incidencia').on('click', function(){
+        $('#form')[0].reset()
+        $('#edit').hide();
+        $('#env').show();
+    })
+</script>
+
+<!-- Guardar incidencia -->
+<script>
+    $('#form').on('submit', function(event) {
+        event.preventDefault();
+        $.ajax({
+            url: '{% url "guardar_incidencia" %}',
+                method: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if(response.status == 'ok') {
+                        let titulo = $('#titulo').val();
+                        let descripcion = $('#descripcion').val();
+                        let prioridad = $('#Prioridad').val();
+                        let id = response["id"]
+                        tabla.row.add(
+                            [id, titulo, descripcion, prioridad]
+                        ).draw();
+                        $('#modalForm').modal('toggle');
+                        $('#form')[0].reset();
+                    } else {
+                        alert('Ha ocurrido un error al enviar la incidencia.');
+                    }
+                }
+            });
+        });
+</script>
+<!-- Eliminar incidencia -->
+<script>
+    $('#tabla tbody').on('click', '.btn-eliminar', function(){
+        let row = tabla.row($(this).parents("tr")); 
+        let id = row.data()[0];
+        Swal.fire({
+            title: '¿Seguro que quieres borrar esta incidencia?',
+            text: "Esta acción borrará la incidencia de la lista",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#30d641',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Si',
+            cancelButtonText: 'No',
+        }).then ((result) => {
+            if(result.isConfirmed) {
+                $.ajax({
+                    url: '{% url "eliminar_incidencia" %}',
+                    type: 'POST',
+                    data: {
+                        id: id
+                    },
+                    success: function () {
+                        tabla.row(row).remove().draw()
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'No se pudo eliminar la fila',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+<!-- Boton de editar (Abrir formulario con los datos rellenos)-->
+<script>
+    $('#tabla tbody').on('click', '.btn-editar', function(){
+        $('#edit').show();
+        $('#env').hide();
+        let td = ($(this).parents("tr"));
+        let id = tabla.row(td).data()[0];
+
+        $('#modalForm').modal('show');
+        $('#form')[0][1]['value'] = id
+        $('#form')[0][2]['value'] = td.find('.titulo').html()
+        $('#form')[0][3]['value'] = td.find('.descripcion').html()
+        $('#form')[0][4]['value'] = td.find('.prioridad').html()
+         
+    })
+</script>
+
+<!-- Guardar nuevos datos al editar-->
+<script>
+    $('#formulario').on('click', '#edit', function() {
+        $.ajax({
+            url: '{% url "editar_incidencia" %}',
+                method: 'POST',
+                data: $('#form').serialize(),
+                
+                success: function(response) {
+                    if(response.status == 'ok') {
+                        let titulo = $('#form')[0][2]['value']
+                        let descripcion =$('#form')[0][3]['value']
+                        let prioridad = $('#form')[0][4]['value']
+                        let id = response["id"]
+                        
+                        var aux = ($('.fila[data-id='+id+']'))
+                        aux.find(".titulo").html(titulo)
+                        aux.find(".descripcion").html(descripcion)
+                        aux.find(".prioridad").html(prioridad)
+
+                        $('#modalForm').modal('toggle');
+                        $('#form')[0].reset();
+                    } else {
+                        alert('Ha ocurrido un error al enviar la incidencia.');
+                    }
+                }
+            });
+
+    });
+</script>
+
+
